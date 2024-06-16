@@ -62,6 +62,7 @@ const LoginController = async (req, res) => {
   try {
     const { email, password } = req.body;
     console.log("skdfjklsd", email, password);
+    console.log("step1");
     //validation
     if (!email || !password) {
       return res.status(400).send({
@@ -69,7 +70,7 @@ const LoginController = async (req, res) => {
         message: "Please Provide email or password",
       });
     }
-
+    console.log("step2");
     // find user
     const user = await userModel.findOne({ email });
     if (!user) {
@@ -78,21 +79,20 @@ const LoginController = async (req, res) => {
         message: "User Not Found",
       });
     }
-
+    console.log("step3");
     //match password
 
     const matchPassword = password === user.password;
-    console.log(matchPassword);
     if (!matchPassword) {
       return res.status(500).send({
         success: false,
         message: "Invalid username or password",
       });
     }
-    user.password = undefined;
+    // user.password = undefined;
 
     //token
-
+    console.log("step4");
     const token = await JWT.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1d",
     });
@@ -112,4 +112,43 @@ const LoginController = async (req, res) => {
   }
 };
 
-module.exports = { registerController, LoginController };
+const updateUserController = async (req, res) => {
+  try {
+    const { name, password, email, _id } = req.body;
+    console.log(name, password, email, _id);
+    //user find
+    const user = await userModel.findOne({ _id });
+    console.log(user);
+    //password validate
+    if (password && password.length < 6) {
+      return res.status(400).send({
+        success: false,
+        message: "Password is required and should be 6 character long",
+      });
+    }
+
+    const updatedUser = await userModel.findOneAndUpdate(
+      { _id },
+      {
+        name: name || user.name,
+        password: password || user.password,
+        email: email || user.email,
+      }
+    );
+
+    res.status(200).send({
+      success: true,
+      message: "Profile Updated Please Login",
+      updatedUser,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      success: false,
+      message: "Error In User Update Api",
+      error,
+    });
+  }
+};
+
+module.exports = { registerController, LoginController, updateUserController };
